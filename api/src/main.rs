@@ -5,7 +5,7 @@ use crate::models::{Book,InsertBook};
 use ormx::Insert;
 use rocket::form::{Form, FromForm};
 use rocket::http::Status;
-use rocket::response::Result;
+use rocket::response;
 use rocket::response::content::Json;
 use rocket::response::status::{self};
 use sqlx::postgres::PgPool;
@@ -37,7 +37,7 @@ impl From<models::InsertBook> for CreateBook {
 }
 
 #[rocket::post("/book", data = "<input>")]
-async fn createBook(pool: &rocket::State<PgPool>, input: Form<CreateBook>) -> Result {
+async fn createBook(pool: &rocket::State<PgPool>, input: Form<CreateBook>) -> response::Result<Json<Book>> {
     let db = pool.acquire()
         .await
         .map_err(|e| status::Custom(Status::InternalServerError, "Error acquiring pool"))?;
