@@ -4,10 +4,9 @@ extern crate rocket;
 use crate::models::{Book,InsertBook};
 use dotenv::dotenv;
 use ormx::Insert;
-use rocket::Error;
 use rocket::form::{Form, FromForm};
 use rocket::http::Status;
-use rocket::response::{Responder, status::{Custom}};
+use rocket::response::{status::{Custom}};
 use rocket::serde::json::{Json};
 use sqlx::postgres::PgPool;
 mod models;
@@ -23,7 +22,7 @@ mod models;
 struct CreateBook {
     author_id: i32,
     title: String,
-    genre: models::Genre
+    genre: i16
 }
 
 impl From<models::InsertBook> for CreateBook {
@@ -37,10 +36,10 @@ impl From<models::InsertBook> for CreateBook {
 }
 
 #[rocket::post("/book", data = "<input>")]
-async fn createBook(pool: &rocket::State<PgPool>, input: Form<CreateBook>) -> Result<Json<Book>, Custom<String>> {
+async fn create_book(pool: &rocket::State<PgPool>, input: Form<CreateBook>) -> Result<Json<Book>, Custom<String>> {
     let mut db = pool.acquire()
         .await
-        .map_err(|e| Custom(Status::InternalServerError, String::from("Error acquiring db pool")))?;
+        .map_err(|_| Custom(Status::InternalServerError, String::from("Error acquiring db pool")))?;
 
     InsertBook {
         author_id: input.author_id,
@@ -50,7 +49,7 @@ async fn createBook(pool: &rocket::State<PgPool>, input: Form<CreateBook>) -> Re
         .insert(&mut *db)
         .await
         .map(Json)
-        .map_err(|e| Custom(Status::InternalServerError, String::from("Error inserting")))
+        .map_err(|_| Custom(Status::InternalServerError, String::from("Error inserting")))
 }
 
 #[rocket::launch]
@@ -62,5 +61,5 @@ async fn rocket() -> _ {
 
     rocket::build()
         .manage::<PgPool>(pool)
-        .mount("/", rocket::routes![createBook])
+        .mount("/", rocket::routes![create_book])
 }

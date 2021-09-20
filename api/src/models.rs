@@ -1,17 +1,6 @@
-use sqlx::{Type};
 use ormx::{Table};
-use rocket::form::{FromForm, FromFormField};
+use rocket::form::{FromForm};
 use rocket::serde::{Serialize, Deserialize};
-
-#[derive(Debug, Copy, Clone, Deserialize, FromFormField, Type)]
-#[sqlx(type_name = "genre")]
-#[sqlx(rename_all = "lowercase")] 
-pub enum Genre {
-    SF,
-    Fiction,
-    Psychology,
-    Other
-}
 
 #[derive(Debug, Table, FromForm, Serialize, Deserialize)]
 #[ormx(table = "books", id = id, insertable)]
@@ -20,8 +9,7 @@ pub struct Book {
     pub id: i32,
     pub author_id: i32,
     pub title: String,
-    #[ormx(custom_type)]
-    pub genre: Genre
+    pub genre: i16
 }
 
 #[derive(Debug, Table)]
@@ -29,7 +17,5 @@ pub struct Book {
 pub struct Author {
     #[ormx(column = "id", default)]
     pub id: i32,
-    pub name: String,
-    #[ormx(custom_type)]
-    pub genre: Option<Genre>
+    pub name: String
 }
