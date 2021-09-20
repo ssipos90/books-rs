@@ -1,4 +1,4 @@
-GET http://localhost:8000/book
+GET http://localhost:8000/book?author_id=1
 Accept: application/json
 Content-Type: application/json
 
@@ -8,7 +8,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "title": "Metro 2033",
+  "title": "Metro 2033: Last Light",
   "author_id": 1,
   "genre": "SF"
 }

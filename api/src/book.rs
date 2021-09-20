@@ -1,16 +1,36 @@
 use ormx::Insert;
-use rocket::{Route, http::Status, response::status::Custom, serde::{json::{Json}, Deserialize}};
+use rocket::{Route, FromForm, http::Status, response::status::Custom, serde::{json::{Json}, Deserialize}};
 use sqlx::PgPool;
-use crate::{models::{Book, InsertBook}, tools::{Res, acquire_db}};
+use crate::{PAGE_SIZE, models::{Book, InsertBook}, tools::{Res, acquire_db}};
 
+#[derive(FromForm)]
+pub struct BookFilters {
+  author_id: Option<u32>,
+}
 
-#[rocket::get("/")]
-async fn list_books(pool: &rocket::State<PgPool>, ) -> Res<Vec<Book>> {
+#[rocket::get("/?<page>&<filters..>")]
+async fn list_books(pool: &rocket::State<PgPool>, filters: BookFilters, page: Option<u32>) -> Res<Vec<Book>> {
     let mut db = acquire_db(pool).await?;
+
+    let skip: u32 = match page {
+      None | Some(0) => 0,
+      Some(page) => (page - 1) * PAGE_SIZE
+    };
 
     ormx::conditional_query_as!(
         Book,
-        "SELECT * FROM books ORDER BY title;"
+        "SELECT * FROM books"
+        "WHERE 1=1"
+        Some(id) = filters.author_id => {
+          "AND author_id="?(id as i64)
+        }
+        "ORDER BY title"
+        l = PAGE_SIZE => {
+            "LIMIT" ?(l as i64)
+        }
+        s = skip => {
+            "OFFSET" ?(s as i64)
+        }
     )
         .fetch_all(&mut *db)
         .await

@@ -1,12 +1,15 @@
 use ormx::Insert;
-use rocket::{Route, http::Status, response::status::Custom, serde::{json::{Json}, Deserialize}};
+use rocket::{Route, FromForm, http::Status, response::status::Custom, serde::{json::{Json}, Deserialize}};
 use sqlx::PgPool;
-use crate::{models::{Author, InsertAuthor}, tools::{Res, acquire_db}};
+use crate::{PAGE_SIZE, models::{Author, InsertAuthor}, tools::{Res, acquire_db}};
 
-const PAGE_SIZE: u32 = 12;
+#[derive(FromForm)]
+pub struct AuthorFilters<'r> {
+  name: Option<&'r str>
+}
 
-#[rocket::get("/?<page>")]
-pub async fn list_authors(pool: &rocket::State<PgPool>, page: Option<u32>) -> Res<Vec<Author>> {
+#[rocket::get("/?<page>&<filters..>")]
+pub async fn list_authors<'r>(pool: &rocket::State<PgPool>, filters: AuthorFilters<'r>, page: Option<u32>) -> Res<Vec<Author>> {
     let mut db = acquire_db(pool).await?;
 
     let skip: u32 = match page {
@@ -17,6 +20,10 @@ pub async fn list_authors(pool: &rocket::State<PgPool>, page: Option<u32>) -> Re
     ormx::conditional_query_as!(
         Author,
         "SELECT * FROM authors"
+        "WHERE 1=1"
+        Some(name) = filters.name => {
+          "AND name LIKE"?(name)
+        }
         "ORDER BY name"
         l = PAGE_SIZE => {
             "LIMIT" ?(l as i64)

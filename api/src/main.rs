@@ -9,6 +9,8 @@ use crate::book::{book_routes};
 use dotenv::dotenv;
 use sqlx::postgres::PgPool;
 
+pub const PAGE_SIZE: u32 = 12;
+
 #[rocket::launch]
 async fn rocket() -> _ {
     dotenv().ok();
