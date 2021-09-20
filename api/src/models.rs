@@ -12,7 +12,7 @@ pub struct Book {
     pub genre: i16
 }
 
-#[derive(Debug, Table)]
+#[derive(Debug, Table, FromForm, Serialize, Deserialize)]
 #[ormx(table = "authors", id = id, insertable)]
 pub struct Author {
     #[ormx(column = "id", default)]
