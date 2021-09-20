@@ -1,7 +1,7 @@
 use sqlx::{Type};
 use ormx::{Table};
-use serde::{Deserialize};
 use rocket::form::{FromForm, FromFormField};
+use rocket::serde::{Serialize, Deserialize};
 
 #[derive(Debug, Copy, Clone, Deserialize, FromFormField, Type)]
 #[sqlx(type_name = "genre")]
@@ -13,7 +13,7 @@ pub enum Genre {
     Other
 }
 
-#[derive(Debug, Table, FromForm)]
+#[derive(Debug, Table, FromForm, Serialize, Deserialize)]
 #[ormx(table = "books", id = id, insertable)]
 pub struct Book {
     #[ormx(column = "id", default)]
