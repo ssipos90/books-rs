@@ -6,9 +6,10 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dotenv = "0.15.0"
-ormx = {version = "0.7", features = ["postgres"]}
-sqlx = {version = "0.5.7", features = ["runtime-tokio-rustls", "postgres", "macros"]}
-tokio = {version = "1.11.0", features = ["full"]}
-rocket = {version = "0.5.0-rc.1", features = ["json"]}
-serde = "1.0.130"
+dotenv = "^0.15.0"
+log = "^0.4.14"
+ormx = {version = "^0.7", features = ["postgres"]}
+rocket = {version = "^0.5.0-rc.1", features = ["json"]}
+serde = "^1.0.130"
+sqlx = {version = "^0.5.7", features = ["runtime-tokio-rustls", "postgres", "macros"]}
+tokio = {version = "^1.11.0", features = ["full"]}
