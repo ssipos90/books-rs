@@ -40,18 +40,17 @@ impl From<models::InsertBook> for CreateBook {
 async fn createBook(pool: &rocket::State<PgPool>, input: Form<CreateBook>) -> Result<Json<Book>, Custom<String>> {
     let mut db = pool.acquire()
         .await
-        .map_err(|e| Custom(Status::InternalServerError, String::from("Error acquiring pool")))?;
+        .map_err(|e| Custom(Status::InternalServerError, String::from("Error acquiring db pool")))?;
 
-    let book = InsertBook {
+    InsertBook {
         author_id: input.author_id,
         genre: input.genre,
         title: input.title.clone()
     }
         .insert(&mut *db)
         .await
-        .map_err(|e| Custom(Status::InternalServerError, String::from("Error inserting")))?;
-
-    Ok(Json(book))
+        .map(Json)
+        .map_err(|e| Custom(Status::InternalServerError, String::from("Error inserting")))
 }
 
 #[rocket::launch]
