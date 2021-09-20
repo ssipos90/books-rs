@@ -1,0 +1,14 @@
+GET http://localhost:8000/book
+Accept: application/json
+Content-Type: application/json
+
+###
+POST http://localhost:8000/book
+Accept: application/json
+Content-Type: application/json
+
+{
+  "title": "Metro 2033",
+  "author_id": 1,
+  "genre": "SF"
+}

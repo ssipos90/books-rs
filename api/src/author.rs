@@ -1,16 +1,29 @@
 use ormx::Insert;
-use rocket::{Route, form::{ FromForm, Form }, http::Status, response::status::Custom, serde::json::{Json}};
+use rocket::{Route, http::Status, response::status::Custom, serde::{json::{Json}, Deserialize}};
 use sqlx::PgPool;
 use crate::{models::{Author, InsertAuthor}, tools::{Res, acquire_db}};
 
+const PAGE_SIZE: u32 = 12;
 
-#[rocket::get("/")]
-pub async fn list_authors(pool: &rocket::State<PgPool>, ) -> Res<Vec<Author>> {
+#[rocket::get("/?<page>")]
+pub async fn list_authors(pool: &rocket::State<PgPool>, page: Option<u32>) -> Res<Vec<Author>> {
     let mut db = acquire_db(pool).await?;
+
+    let skip: u32 = match page {
+      None | Some(0) => 0,
+      Some(page) => (page - 1) * PAGE_SIZE
+    };
 
     ormx::conditional_query_as!(
         Author,
-        "SELECT * FROM authors ORDER BY name;"
+        "SELECT * FROM authors"
+        "ORDER BY name"
+        l = PAGE_SIZE => {
+            "LIMIT" ?(l as i64)
+        }
+        s = skip => {
+            "OFFSET" ?(s as i64)
+        }
     )
         .fetch_all(&mut *db)
         .await
@@ -18,25 +31,17 @@ pub async fn list_authors(pool: &rocket::State<PgPool>, ) -> Res<Vec<Author>> {
         .map_err(|_| Custom(Status::InternalServerError, String::from("Failed loading authors.")))
 }
 
-#[derive(FromForm)]
-pub struct CreateAuthor {
-    name: String,
+#[derive(Deserialize)]
+pub struct CreateAuthor<'r> {
+    name: &'r str,
 }
 
-impl From<InsertAuthor> for CreateAuthor {
-    fn from(model: InsertAuthor) -> Self {
-        Self {
-            name: model.name,
-        }
-    }
-}
-
-#[rocket::post("/", data = "<input>")]
-pub async fn create_author(pool: &rocket::State<PgPool>, input: Form<CreateAuthor>) -> Res<Author> {
+#[rocket::post("/", format = "application/json", data = "<input>")]
+pub async fn create_author<'r>(pool: &rocket::State<PgPool>, input: Json<CreateAuthor<'r>>) -> Res<Author> {
     let mut db = acquire_db(pool).await?;
 
     InsertAuthor {
-        name: input.name.clone()
+        name: input.name.to_string()
     }
         .insert(&mut *db)
         .await

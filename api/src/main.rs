@@ -1,5 +1,4 @@
 extern crate dotenv;
-
 extern crate rocket;
 mod models;
 mod author;
