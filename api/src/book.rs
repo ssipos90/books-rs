@@ -4,12 +4,12 @@ use sqlx::PgPool;
 use crate::{PAGE_SIZE, models::{Book, InsertBook}, tools::{Res, acquire_db}};
 
 #[derive(FromForm)]
-pub struct BookFilters {
+pub struct BookListFilters {
   author_id: Option<u32>,
 }
 
 #[rocket::get("/?<page>&<filters..>")]
-async fn list_books(pool: &rocket::State<PgPool>, filters: BookFilters, page: Option<u32>) -> Res<Vec<Book>> {
+async fn list_books(pool: &rocket::State<PgPool>, filters: BookListFilters, page: Option<u32>) -> Res<Vec<Book>> {
     let mut db = acquire_db(pool).await?;
 
     let skip: u32 = match page {
@@ -25,12 +25,8 @@ async fn list_books(pool: &rocket::State<PgPool>, filters: BookFilters, page: Op
           "AND author_id="?(id as i64)
         }
         "ORDER BY title"
-        l = PAGE_SIZE => {
-            "LIMIT" ?(l as i64)
-        }
-        s = skip => {
-            "OFFSET" ?(s as i64)
-        }
+        "LIMIT" ?(PAGE_SIZE as i64)
+        "OFFSET" ?(skip as i64)
     )
         .fetch_all(&mut *db)
         .await

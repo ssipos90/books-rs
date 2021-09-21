@@ -1,7 +1,7 @@
+use crate::{PAGE_SIZE, models::{Author, InsertAuthor}, tools::{Res, acquire_db}};
 use ormx::Insert;
 use rocket::{Route, FromForm, http::Status, response::status::Custom, serde::{json::{Json}, Deserialize}};
 use sqlx::PgPool;
-use crate::{PAGE_SIZE, models::{Author, InsertAuthor}, tools::{Res, acquire_db}};
 
 #[derive(FromForm)]
 pub struct AuthorFilters<'r> {
@@ -25,12 +25,8 @@ pub async fn list_authors<'r>(pool: &rocket::State<PgPool>, filters: AuthorFilte
           "AND name LIKE"?(name)
         }
         "ORDER BY name"
-        l = PAGE_SIZE => {
-            "LIMIT" ?(l as i64)
-        }
-        s = skip => {
-            "OFFSET" ?(s as i64)
-        }
+        "LIMIT" ?(PAGE_SIZE as i64)
+        "OFFSET" ?(skip as i64)
     )
         .fetch_all(&mut *db)
         .await
