@@ -1,4 +1,4 @@
-use ormx::{Table};
+use ormx::{Table, Patch};
 use rocket::form::{FromForm};
 use rocket::serde::{Serialize, Deserialize};
 
@@ -17,5 +17,11 @@ pub struct Book {
 pub struct Author {
     #[ormx(column = "id", default)]
     pub id: i32,
+    pub name: String
+}
+
+#[derive(Patch)]
+#[ormx(table_name = "authors", table = crate::models::Author, id = "id")]
+pub struct UpdateAuthor {
     pub name: String
 }

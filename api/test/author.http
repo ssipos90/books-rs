@@ -1,6 +1,14 @@
 GET http://localhost:8000/author?page=-2
 Accept: application/json
 Content-Type: application/json
+###
+PUT http://localhost:8000/author/31232
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Agatha Christine"
+}
 
 ###
 POST http://localhost:8000/author
