@@ -1,5 +1,9 @@
-use crate::{PAGE_SIZE, models::{Author, InsertAuthor, UpdateAuthor}, tools::{acquire_db, Res}};
-use ormx::{Insert,Table};
+use crate::{
+    models::{Author, InsertAuthor},
+    tools::{acquire_db, Res},
+    PAGE_SIZE,
+};
+use ormx::{Insert, Table};
 use rocket::{
     http::Status,
     response::status::Custom,
@@ -14,7 +18,7 @@ pub struct AuthorFilters<'r> {
 }
 
 #[rocket::get("/?<page>&<filters..>", format = "application/json")]
-pub async fn list_authors<'r>(
+async fn list_authors<'r>(
     pool: &rocket::State<PgPool>,
     filters: AuthorFilters<'r>,
     page: Option<u32>,
@@ -31,7 +35,7 @@ pub async fn list_authors<'r>(
         "SELECT * FROM authors"
         "WHERE 1=1"
         Some(name) = filters.name => {
-          "AND name LIKE"?(name)
+          "AND name LIKE"?(format!("%{}%", name))
         }
         "ORDER BY name"
         "LIMIT" ?(PAGE_SIZE as i64)
@@ -54,7 +58,7 @@ pub struct CreateAuthor<'r> {
 }
 
 #[rocket::post("/", format = "application/json", data = "<input>")]
-pub async fn create_author<'r>(
+async fn create_author<'r>(
     pool: &rocket::State<PgPool>,
     input: Json<CreateAuthor<'r>>,
 ) -> Res<Author> {
@@ -70,12 +74,12 @@ pub async fn create_author<'r>(
 }
 
 #[derive(Deserialize)]
-pub struct UpdateAuthorBody<'r> {
+struct UpdateAuthorBody<'r> {
     name: &'r str,
 }
 
 #[rocket::put("/<author_id>", format = "application/json", data = "<input>")]
-pub async fn update_author<'r>(
+async fn update_author<'r>(
     pool: &rocket::State<PgPool>,
     author_id: i32,
     input: Json<UpdateAuthorBody<'r>>,
@@ -83,19 +87,24 @@ pub async fn update_author<'r>(
     let mut db = acquire_db(pool).await?;
 
     let mut author = Author::get(&mut *db, author_id)
-            .await
-            .map_err(|e| match e {
-              sqlx::Error::RowNotFound => Custom(Status::NotFound, format!("author_id {} not found", author_id)),
-              _ => Custom(Status::InternalServerError, String::from("Error fetching from database."))
-            })?;
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => Custom(
+                Status::NotFound,
+                format!("author_id {} not found", author_id),
+            ),
+            _ => Custom(
+                Status::InternalServerError,
+                String::from("Error fetching from database."),
+            ),
+        })?;
 
     author.name = input.name.to_string();
-    author.update(&mut *db)
-      .await
-      .map(|_| {
-        Json(author)
-      })
-      .map_err(|_| Custom(Status::InternalServerError, String::from("Error inserting")))
+    author
+        .update(&mut *db)
+        .await
+        .map(|_| Json(author))
+        .map_err(|_| Custom(Status::InternalServerError, String::from("Error inserting")))
 }
 
 pub fn author_routes() -> Vec<Route> {
